@@ -14,10 +14,13 @@ class SupportNotificationService
      */
     public function notifyAdminNewTicket(SupportTicket $ticket): void
     {
+        $tenantName   = $ticket->tenant ? $ticket->tenant->name : 'Unknown';
+        $categoryLabel = $ticket->category_label;
+
         $this->notifyAllSuperAdmins(
-            title: "New Support Ticket: {$ticket->ticket_number}",
-            message: "[{$ticket->requester_name} @ {$ticket->tenant?->name}] submitted a {$ticket->category_label} ticket: "{$ticket->subject}"",
-            link: route('superadmin.support.show', $ticket),
+            title:   "New Support Ticket: {$ticket->ticket_number}",
+            message: "[{$ticket->requester_name} @ {$tenantName}] submitted a {$categoryLabel} ticket: \"{$ticket->subject}\"",
+            link:    route('superadmin.support.show', $ticket),
         );
     }
 
@@ -27,37 +30,42 @@ class SupportNotificationService
     public function notifyAdminOfReply(SupportTicket $ticket): void
     {
         $this->notifyAllSuperAdmins(
-            title: "New Reply on {$ticket->ticket_number}",
-            message: "{$ticket->requester_name} replied on ticket "{$ticket->subject}"",
-            link: route('superadmin.support.show', $ticket),
+            title:   "New Reply on {$ticket->ticket_number}",
+            message: "{$ticket->requester_name} replied on ticket \"{$ticket->subject}\"",
+            link:    route('superadmin.support.show', $ticket),
         );
     }
 
     /**
-     * Notify the tenant (via their tenant-side admin user) that the admin replied.
-     * Runs in tenant context — writes to the TENANT's notifications table.
+     * Notify the tenant admin that the support team replied.
+     * Switches to tenant context to write to the tenant's notifications table.
      */
     public function notifyTenantOfReply(SupportTicket $ticket): void
     {
         try {
             $tenant = $ticket->tenant;
-            if (! $tenant) return;
+            if (! $tenant) {
+                return;
+            }
 
-            $tenant->run(function () use ($ticket) {
-                // Inside tenant DB context — find the admin user by email
-                $admin = User::where('email', $ticket->requester_email)->first();
+            $ticketId      = $ticket->id;
+            $ticketNumber  = $ticket->ticket_number;
+            $ticketSubject = $ticket->subject;
+            $requesterEmail = $ticket->requester_email;
+
+            $tenant->run(function () use ($ticketId, $ticketNumber, $ticketSubject, $requesterEmail) {
+                $admin = User::where('email', $requesterEmail)->first();
 
                 if ($admin) {
                     Notification::create([
                         'user_id' => $admin->id,
-                        'title'   => "Support Reply — {$ticket->ticket_number}",
-                        'message' => "The support team replied to your ticket: "{$ticket->subject}"",
-                        'link'    => '/admin/support/' . $ticket->id,
+                        'title'   => "Support Reply -- {$ticketNumber}",
+                        'message' => "The support team replied to your ticket: \"{$ticketSubject}\"",
+                        'link'    => '/admin/support/' . $ticketId,
                     ]);
                 }
             });
         } catch (\Throwable $e) {
-            // Never crash a page over notification delivery
             Log::warning('[Support] Could not notify tenant of reply', [
                 'ticket_id' => $ticket->id,
                 'error'     => $e->getMessage(),
@@ -72,19 +80,25 @@ class SupportNotificationService
     {
         try {
             $tenant = $ticket->tenant;
-            if (! $tenant) return;
+            if (! $tenant) {
+                return;
+            }
 
-            $label = ucfirst(str_replace('_', ' ', $newStatus));
+            $label         = ucfirst(str_replace('_', ' ', $newStatus));
+            $ticketId      = $ticket->id;
+            $ticketNumber  = $ticket->ticket_number;
+            $ticketSubject = $ticket->subject;
+            $requesterEmail = $ticket->requester_email;
 
-            $tenant->run(function () use ($ticket, $label) {
-                $admin = User::where('email', $ticket->requester_email)->first();
+            $tenant->run(function () use ($ticketId, $ticketNumber, $ticketSubject, $requesterEmail, $label) {
+                $admin = User::where('email', $requesterEmail)->first();
 
                 if ($admin) {
                     Notification::create([
                         'user_id' => $admin->id,
-                        'title'   => "Ticket {$ticket->ticket_number} — {$label}",
-                        'message' => "Your support ticket "{$ticket->subject}" is now {$label}.",
-                        'link'    => '/admin/support/' . $ticket->id,
+                        'title'   => "Ticket {$ticketNumber} -- {$label}",
+                        'message' => "Your support ticket \"{$ticketSubject}\" is now {$label}.",
+                        'link'    => '/admin/support/' . $ticketId,
                     ]);
                 }
             });
@@ -98,7 +112,6 @@ class SupportNotificationService
 
     private function notifyAllSuperAdmins(string $title, string $message, string $link): void
     {
-        // Write to the CENTRAL notifications table for all superadmin users
         User::all()->each(function (User $user) use ($title, $message, $link) {
             try {
                 Notification::create([
