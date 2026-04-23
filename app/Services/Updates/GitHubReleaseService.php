@@ -29,11 +29,16 @@ class GitHubReleaseService
             return [];
         }
 
-        $response = Http::withHeaders($this->headers())
-            ->timeout(15)
-            ->get("{$this->baseUrl}/repos/{$this->owner}/{$this->repo}/releases", [
-                'per_page' => config('github.max_stored_releases', 20),
-            ]);
+        $request = Http::withHeaders($this->headers())->timeout(15);
+
+        // Skip SSL verification on local dev (Windows has no CA bundle by default)
+        if (app()->environment('local')) {
+            $request = $request->withoutVerifying();
+        }
+
+        $response = $request->get("{$this->baseUrl}/repos/{$this->owner}/{$this->repo}/releases", [
+            'per_page' => config('github.max_stored_releases', 20),
+        ]);
 
         if (! $response->successful()) {
             Log::error('[GitHub] Failed to fetch releases', [
