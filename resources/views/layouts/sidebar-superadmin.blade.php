@@ -212,6 +212,25 @@
         <span class="sb-icon"><i class="fas fa-server"></i></span>
         DB Storage & Bandwidth
     </a>
+
+    <div class="sb-divider"></div>
+    <span class="sb-section-label">Updates & Support</span>
+
+    <a href="{{ route('superadmin.releases.index') }}"
+       class="sb-link {{ request()->routeIs('superadmin.releases*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-cloud-download-alt"></i></span>
+        Update Management
+    </a>
+
+    @php try { $unreadSupport = \App\Models\SupportTicket::where('unread_admin', '>', 0)->count(); } catch(\Throwable $e) { $unreadSupport = 0; } @endphp
+    <a href="{{ route('superadmin.support.index') }}"
+       class="sb-link {{ request()->routeIs('superadmin.support*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-headset"></i></span>
+        Support Inbox
+        @if($unreadSupport > 0)
+            <span style="margin-left:auto;background:#CE1126;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;">{{ $unreadSupport }}</span>
+        @endif
+    </a>
 <!-- 
     <div class="sb-divider"></div>
     <span class="sb-section-label">Configuration</span>

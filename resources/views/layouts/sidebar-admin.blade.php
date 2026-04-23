@@ -265,6 +265,41 @@
         Settings
     </a>
 
+    {{-- Update Status --}}
+    @php
+        try {
+            $tenantId       = tenancy()->tenant->id ?? null;
+            $updateStatus   = $tenantId
+                ? \App\Models\TenantVersionStatus::where('tenant_id', $tenantId)->value('update_status')
+                : null;
+            $updatePending  = in_array($updateStatus, ['update_available', 'failed']);
+            $unreadTickets  = $tenantId
+                ? \App\Models\SupportTicket::where('tenant_id', $tenantId)->where('unread_tenant', '>', 0)->count()
+                : 0;
+        } catch(\Throwable $e) {
+            $updatePending = false;
+            $unreadTickets = 0;
+        }
+    @endphp
+
+    <a href="{{ route('admin.update.index') }}"
+       class="sb-link {{ request()->routeIs('admin.update*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-cloud-download-alt"></i></span>
+        System Update
+        @if($updatePending)
+            <span style="margin-left:auto;background:#b38a00;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;">NEW</span>
+        @endif
+    </a>
+
+    <a href="{{ route('admin.support.index') }}"
+       class="sb-link {{ request()->routeIs('admin.support*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-headset"></i></span>
+        Support
+        @if($unreadTickets > 0)
+            <span style="margin-left:auto;background:#CE1126;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;">{{ $unreadTickets }}</span>
+        @endif
+    </a>
+
     {{-- Upgrade Plan CTA --}}
     @php
         $tenant      = tenancy()->tenant;

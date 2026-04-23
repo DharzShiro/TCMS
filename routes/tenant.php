@@ -46,6 +46,8 @@ use App\Http\Controllers\Tenant\Trainee\TraineeCertificateController;
 use App\Http\Controllers\Tenant\Admin\CustomReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Tenant\WelcomeController;
+use App\Http\Controllers\Tenant\Admin\AdminUpdateController;
+use App\Http\Controllers\Tenant\Admin\AdminSupportController;
 
 
 Route::middleware([
@@ -92,6 +94,22 @@ Route::middleware([
         Route::post('/subscription/validate-code', [AdminSubscriptionController::class, 'validateCode'])->name('subscription.validate-code');
         Route::post('/subscription/resolve-price', [AdminSubscriptionController::class, 'resolvePrice'])->name('subscription.resolve-price');
          // Expiry wall (no subscription check — always accessible)
+        // ── System Update ──────────────────────────────────────────────
+        Route::prefix('update')->name('update.')->group(function () {
+            Route::get('/',           [AdminUpdateController::class, 'index'])       ->name('index');
+            Route::post('/apply',     [AdminUpdateController::class, 'applyUpdate']) ->name('apply');
+        });
+
+        // ── Support Center ─────────────────────────────────────────────
+        Route::prefix('support')->name('support.')->group(function () {
+            Route::get('/',                                   [AdminSupportController::class, 'index'])              ->name('index');
+            Route::get('/create',                             [AdminSupportController::class, 'create'])             ->name('create');
+            Route::post('/',                                  [AdminSupportController::class, 'store'])              ->name('store');
+            Route::get('/{id}',                              [AdminSupportController::class, 'show'])               ->name('show');
+            Route::post('/{id}/reply',                       [AdminSupportController::class, 'reply'])              ->name('reply');
+            Route::get('/{ticketId}/attachment/{attachment}', [AdminSupportController::class, 'downloadAttachment']) ->name('attachment');
+        });
+
         Route::get('/subscription/expired', [AdminRenewalController::class, 'expired'])
             ->name('subscription.expired');
         Route::post('/renewal/request', [AdminRenewalController::class, 'request'])

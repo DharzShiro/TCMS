@@ -11,3 +11,9 @@ Artisan::command('inspire', function () {
 Schedule::command('tenants:recalculate-storage')->hourly();
 
 Schedule::command('subscriptions:notify-expiring')->dailyAt('08:00');
+
+// Fetch new GitHub releases and sync tenant version statuses every 6 hours
+Schedule::command('releases:fetch --sync')->everySixHours();
+
+// Nightly full tenant version sync (catches any drift)
+Schedule::command('releases:sync-tenants')->dailyAt('03:00');

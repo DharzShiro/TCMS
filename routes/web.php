@@ -12,6 +12,8 @@ use App\Http\Controllers\SuperAdmin\SuperAdminMonitoringController;
 use App\Http\Controllers\SuperAdmin\SuperAdminRenewalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SuperAdmin\SuperAdminReleaseController;
+use App\Http\Controllers\SuperAdmin\SuperAdminSupportController;
 
 foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)
@@ -115,6 +117,28 @@ foreach (config('tenancy.central_domains') as $domain) {
                     Route::get('/',                                     [SuperAdminMonitoringController::class, 'index'])          ->name('index');
                     Route::post('/recalculate-all',                     [SuperAdminMonitoringController::class, 'recalculateAll'])->name('recalculate.all');
                     Route::post('/recalculate/{tenant}',                [SuperAdminMonitoringController::class, 'recalculate'])   ->name('recalculate');
+                });
+
+                // ── Release / Update Management ───────────────────────────
+                Route::prefix('releases')->name('releases.')->group(function () {
+                    Route::get('/',                                      [SuperAdminReleaseController::class, 'index'])           ->name('index');
+                    Route::post('/fetch',                                [SuperAdminReleaseController::class, 'fetch'])           ->name('fetch');
+                    Route::post('/sync-tenants',                        [SuperAdminReleaseController::class, 'syncTenants'])     ->name('sync-tenants');
+                    Route::get('/{release}',                            [SuperAdminReleaseController::class, 'show'])            ->name('show');
+                    Route::post('/{release}/deploy',                    [SuperAdminReleaseController::class, 'deploy'])          ->name('deploy');
+                    Route::post('/{release}/undeploy',                  [SuperAdminReleaseController::class, 'undeploy'])        ->name('undeploy');
+                    Route::post('/{release}/push-all',                  [SuperAdminReleaseController::class, 'pushUpdateToAll'])  ->name('push-all');
+                    Route::post('/{release}/push-tenant',               [SuperAdminReleaseController::class, 'pushUpdateToTenant'])->name('push-tenant');
+                });
+
+                // ── Support Inbox ─────────────────────────────────────────
+                Route::prefix('support')->name('support.')->group(function () {
+                    Route::get('/',                                      [SuperAdminSupportController::class, 'index'])           ->name('index');
+                    Route::get('/{ticket}',                             [SuperAdminSupportController::class, 'show'])            ->name('show');
+                    Route::post('/{ticket}/reply',                      [SuperAdminSupportController::class, 'reply'])           ->name('reply');
+                    Route::patch('/{ticket}/status',                    [SuperAdminSupportController::class, 'updateStatus'])    ->name('status');
+                    Route::patch('/{ticket}/priority',                  [SuperAdminSupportController::class, 'updatePriority'])  ->name('priority');
+                    Route::get('/attachment/{attachment}/download',     [SuperAdminSupportController::class, 'downloadAttachment'])->name('attachment');
                 });
         });
     });
