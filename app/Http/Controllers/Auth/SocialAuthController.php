@@ -233,7 +233,7 @@ class SocialAuthController extends Controller
         }
 
         // ── Log in ────────────────────────────────────────────────────────
-        Auth::login($user, remember: true);
+        Auth::guard('tenant')->login($user, remember: true);
         $request->session()->regenerate();
 
         // Activity log — mirrors TenantLoginController behaviour

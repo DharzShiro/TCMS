@@ -29,7 +29,7 @@ foreach (config('tenancy.central_domains') as $domain) {
             ])->name('auth.google.callback.central');
 
         // ── Guest routes ───────────────────────────────────────────────────
-        Route::middleware('guest')->group(function () {
+        Route::middleware('guest:web')->group(function () {
             Route::get('/login',     [SuperAdminLoginController::class, 'showLoginForm'])->name('superadmin.login');
             Route::post('/login',    [SuperAdminLoginController::class, 'login']);
             Route::get('/register', [SuperAdminRegisterController::class, 'showRegistrationForm'])->name('register');
@@ -38,7 +38,7 @@ foreach (config('tenancy.central_domains') as $domain) {
         });
 
         // ── Authenticated routes ───────────────────────────────────────────
-        Route::middleware('auth')->group(function () {
+        Route::middleware('auth:web')->group(function () {
             Route::post('/logout', [SuperAdminLoginController::class, 'logout'])->name('superadmin.logout');
             Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
             Route::get('/profile',          [ProfileController::class, 'edit'])->name('superadmin.profile.edit');
@@ -48,7 +48,7 @@ foreach (config('tenancy.central_domains') as $domain) {
         });
 
         // ── SuperAdmin protected routes ────────────────────────────────────
-        Route::middleware(['auth', 'superadmin'])
+        Route::middleware(['auth:web', 'superadmin'])
             ->prefix('superadmin')
             ->name('superadmin.')
             ->group(function () {

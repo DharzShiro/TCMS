@@ -46,8 +46,9 @@ class TraineeRegisterController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        Auth::guard('tenant')->login($user);
+        $request->session()->regenerate();
 
-        return redirect('/trainee/dashboard');
+        return redirect()->route('trainee.dashboard');
     }
 }

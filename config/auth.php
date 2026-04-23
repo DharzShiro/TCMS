@@ -37,7 +37,14 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
+            'driver'   => 'session',
+            'provider' => 'users',
+        ],
+        // Separate guard for all tenant-side roles (admin, trainer, trainee).
+        // This stores auth state under a different session key than 'web',
+        // allowing superadmin and tenant users to coexist in the same browser.
+        'tenant' => [
+            'driver'   => 'session',
             'provider' => 'users',
         ],
     ],

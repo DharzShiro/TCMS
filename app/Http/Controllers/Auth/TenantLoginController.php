@@ -22,25 +22,24 @@ class TenantLoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::guard('tenant')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
-            $user = Auth::user();
+            $user = Auth::guard('tenant')->user();
 
             ActivityLog::create([
                 'tenant_id'   => tenancy()->tenant?->id,
                 'tenant_name' => tenancy()->tenant?->name,
-                'user_id'     => Auth::user()->id,
-                'user_name'   => Auth::user()->name,
-                'user_email'  => Auth::user()->email,
-                'role'        => Auth::user()->role,
+                'user_id'     => $user->id,
+                'user_name'   => $user->name,
+                'user_email'  => $user->email,
+                'role'        => $user->role,
                 'action'      => 'login_success',
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->userAgent(),
                 'success'     => true,
             ]);
 
-            // ✅ Log successful login
             ActivityLogService::log($request, 'login_success', true);
 
             return match ($user->role) {
@@ -51,7 +50,6 @@ class TenantLoginController extends Controller
             };
         }
 
-        // ✅ Log failed login attempt
         ActivityLogService::log(
             request: $request,
             action: 'login_failed',
@@ -68,10 +66,9 @@ class TenantLoginController extends Controller
 
     public function logout(Request $request)
     {
-        // ✅ Log logout before clearing session
         ActivityLogService::log($request, 'logout', true);
 
-        Auth::logout();
+        Auth::guard('tenant')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

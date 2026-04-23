@@ -20,11 +20,11 @@ class SuperAdminLoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::guard('web')->attempt($credentials)) {
             $request->session()->regenerate();
 
-            if (Auth::user()->role !== 'superadmin') {
-                Auth::logout();
+            if (Auth::guard('web')->user()->role !== 'superadmin') {
+                Auth::guard('web')->logout();
                 return back()->withErrors([
                     'email' => 'You do not have permission to access this area.',
                 ]);
@@ -41,7 +41,7 @@ class SuperAdminLoginController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

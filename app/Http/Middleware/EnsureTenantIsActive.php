@@ -14,8 +14,9 @@ class EnsureTenantIsActive
         $tenant = tenancy()->tenant;
 
         if ($tenant && ! $tenant->is_active) {
-            // Clear tenancy so the session isn't poisoned
-            auth()->logout();
+            auth()->guard('tenant')->logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
 
             return redirect()->route('login')->withErrors([
                 'email' => 'Your organization\'s access has been suspended. Please contact support.',

@@ -59,8 +59,9 @@ Route::middleware([
     Route::get('/', WelcomeController::class);
 
     // ── Guest routes ───────────────────────────────────────────────────────
-    // Tenant guest routes
-    Route::middleware('guest')->group(function () {
+    // Tenant guest routes — use guest:tenant so the tenant guard is checked,
+    // not the default web guard (which would always appear unauthenticated).
+    Route::middleware('guest:tenant')->group(function () {
         Route::get('/login',     [TenantLoginController::class, 'showLoginForm'])->name('login');
         Route::post('/login',    [TenantLoginController::class, 'login']);
         Route::get('/register',  [TraineeRegisterController::class, 'showRegistrationForm'])->name('register');
@@ -70,7 +71,7 @@ Route::middleware([
     });
 
     // ── Authenticated routes ───────────────────────────────────────────────
-    Route::middleware('auth')->group(function () {
+    Route::middleware('auth:tenant')->group(function () {
         Route::post('/logout', [TenantLoginController::class, 'logout'])->name('logout');
 
         Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
@@ -82,7 +83,7 @@ Route::middleware([
     });
 
     // ── Admin ──────────────────────────────────────────────────────────────
-    Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['auth:tenant', 'role:admin'])->group(function () {
 
         Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
 
@@ -164,7 +165,7 @@ Route::middleware([
     });
 
     // ── Trainer ────────────────────────────────────────────────────────────
-    Route::prefix('trainer')->name('trainer.')->middleware(['auth', 'role:trainer'])->group(function () {
+    Route::prefix('trainer')->name('trainer.')->middleware(['auth:tenant', 'role:trainer'])->group(function () {
         Route::get('/dashboard', [TrainerController::class, 'dashboard'])->name('dashboard');
 
         Route::middleware('subscription:training-schedules')->group(function () {
@@ -189,7 +190,7 @@ Route::middleware([
     });
 
     // ── Trainee ────────────────────────────────────────────────────────────
-    Route::prefix('trainee')->name('trainee.')->middleware(['auth', 'role:trainee'])->group(function () {
+    Route::prefix('trainee')->name('trainee.')->middleware(['auth:tenant', 'role:trainee'])->group(function () {
         Route::get('/dashboard', [TraineeController::class, 'dashboard'])->name('dashboard');
 
         Route::middleware('subscription:courses')->group(function () {

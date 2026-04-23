@@ -10,11 +10,11 @@ class SuperAdminMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! auth()->check()) {
-            return redirect()->route('login');
+        if (! auth()->guard('web')->check()) {
+            return redirect()->route('superadmin.login');
         }
 
-        if (auth()->user()->role !== 'superadmin') {
+        if (auth()->guard('web')->user()->role !== 'superadmin') {
             abort(403, 'Forbidden: Super Admin access required');
         }
 
