@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\FetchGitHubReleasesJob;
 use App\Models\SystemRelease;
 use App\Models\Tenant;
 use App\Models\TenantVersionStatus;
@@ -55,16 +54,29 @@ class SuperAdminReleaseController extends Controller
             return back()->with('error', 'GitHub is not configured.');
         }
 
-        FetchGitHubReleasesJob::dispatch()->onQueue('updates');
+        try {
+            $synced = $this->github->syncToDatabase();
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'GitHub fetch failed: ' . $e->getMessage(),
+                ], 500);
+            }
+            return back()->with('error', 'GitHub fetch failed: ' . $e->getMessage());
+        }
+
+        // Refresh all tenant version badges against the newly synced active release
+        $this->versions->syncAllStatuses();
 
         if ($request->expectsJson()) {
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Fetch job started. Releases will appear in a moment.',
+                'message' => "Synced {$synced} release(s) from GitHub.",
             ]);
         }
 
-        return back()->with('success', 'GitHub sync job dispatched. Refresh in a moment.');
+        return back()->with('success', "Synced {$synced} release(s) from GitHub.");
     }
 
     public function deploy(SystemRelease $release)
