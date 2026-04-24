@@ -30,7 +30,7 @@ class TenantVersionService
      */
     public function syncAllStatuses(): void
     {
-        $latest = SystemRelease::latest();
+        $latest = SystemRelease::latestActive();
 
         if (! $latest) {
             return;
@@ -43,7 +43,7 @@ class TenantVersionService
 
     public function syncTenantStatus(Tenant $tenant, ?SystemRelease $release = null): TenantVersionStatus
     {
-        $release ??= SystemRelease::latest();
+        $release ??= SystemRelease::latestActive();
         $status   = $this->getOrCreateStatus($tenant);
 
         $data = ['last_checked_at' => now()];

@@ -31,7 +31,7 @@ class FetchGitHubReleasesJob implements ShouldQueue
             return;
         }
 
-        $knownLatest = SystemRelease::latest()?->version;
+        $knownLatest = SystemRelease::latestActive()?->version;
 
         try {
             $synced = $github->syncToDatabase();
@@ -46,7 +46,7 @@ class FetchGitHubReleasesJob implements ShouldQueue
 
         Log::info("[GitHub] Synced {$synced} releases from GitHub.");
 
-        $newLatest = SystemRelease::latest();
+        $newLatest = SystemRelease::latestActive();
 
         if ($newLatest && $newLatest->version !== $knownLatest) {
             Log::info("[GitHub] New release detected: {$newLatest->version}");

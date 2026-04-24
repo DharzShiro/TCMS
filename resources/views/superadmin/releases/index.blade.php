@@ -97,9 +97,17 @@
             <div>
                 <p class="font-bold text-sm" style="color:var(--sa-primary)">
                     Latest Active Release — <span class="font-mono">v{{ $latest->version }}</span>
+                    @if($latest->is_deployed)
+                        <span class="badge badge-green ml-2"><i class="fas fa-circle text-xs"></i> Deployed</span>
+                    @else
+                        <span class="badge badge-yellow ml-2"><i class="fas fa-clock text-xs"></i> Not Deployed</span>
+                    @endif
                 </p>
                 <p class="text-xs mt-0.5" style="color:var(--sa-text-muted)">
                     {{ $latest->name }} &bull; Published {{ $latest->published_at?->diffForHumans() }}
+                    @if(! $latest->is_deployed)
+                        &bull; <span style="color:#b38a00">Open the release to mark it as deployed.</span>
+                    @endif
                 </p>
             </div>
         </div>

@@ -44,7 +44,16 @@ class SystemRelease extends CentralModel
         return $query->where('is_deployed', true);
     }
 
-    public static function latest(): ?self
+    /** Newest release with is_active=true — use for tenant update targeting. */
+    public static function latestActive(): ?self
+    {
+        return static::active()
+            ->orderByDesc('published_at')
+            ->first();
+    }
+
+    /** Newest release that is both active AND deployed — use for "production version" display. */
+    public static function latestDeployed(): ?self
     {
         return static::active()->deployed()
             ->orderByDesc('published_at')

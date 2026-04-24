@@ -17,7 +17,7 @@ class AdminUpdateController extends Controller
         $tenant = tenancy()->tenant;
 
         // Refresh status against latest release before showing
-        $release = SystemRelease::latest();
+        $release = SystemRelease::latestActive();
         $status  = $this->versions->syncTenantStatus($tenant, $release);
 
         $logs = TenantUpdateLog::where('tenant_id', $tenant->id)
@@ -37,7 +37,7 @@ class AdminUpdateController extends Controller
     public function applyUpdate()
     {
         $tenant  = tenancy()->tenant;
-        $release = SystemRelease::latest();
+        $release = SystemRelease::latestActive();
 
         if (! $release) {
             return back()->with('error', 'No active release available.');

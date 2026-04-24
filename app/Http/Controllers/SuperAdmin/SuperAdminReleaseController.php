@@ -22,7 +22,7 @@ class SuperAdminReleaseController extends Controller
     {
         $releases = SystemRelease::orderByDesc('published_at')->paginate(15);
         $summary  = $this->versions->getUpdateSummary();
-        $latest   = SystemRelease::latest();
+        $latest   = SystemRelease::latestActive();
 
         return view('superadmin.releases.index', compact('releases', 'summary', 'latest'));
     }
