@@ -136,6 +136,7 @@ foreach (config('tenancy.central_domains') as $domain) {
                     Route::get('/',                                      [SuperAdminSupportController::class, 'index'])           ->name('index');
                     // Specific non-wildcard routes BEFORE the /{ticket} wildcard
                     Route::get('/attachment/{attachment}/download',     [SuperAdminSupportController::class, 'downloadAttachment'])->name('attachment');
+                    Route::get('/attachment/{attachment}/preview',      [SuperAdminSupportController::class, 'previewAttachment']) ->name('preview');
                     Route::get('/{ticket}',                             [SuperAdminSupportController::class, 'show'])            ->name('show');
                     Route::post('/{ticket}/reply',                      [SuperAdminSupportController::class, 'reply'])           ->name('reply');
                     Route::patch('/{ticket}/status',                    [SuperAdminSupportController::class, 'updateStatus'])    ->name('status');

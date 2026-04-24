@@ -118,7 +118,6 @@ class AdminSupportController extends Controller
 
     public function downloadAttachment(int $ticketId, SupportAttachment $attachment)
     {
-        // Ensure attachment belongs to this tenant's ticket
         $ticket = SupportTicket::where('id', $ticketId)
             ->where('tenant_id', tenancy()->tenant->id)
             ->firstOrFail();
@@ -134,6 +133,27 @@ class AdminSupportController extends Controller
         return Storage::disk('support')->download(
             $attachment->stored_path,
             $attachment->original_name,
+        );
+    }
+
+    public function previewAttachment(int $ticketId, SupportAttachment $attachment)
+    {
+        $ticket = SupportTicket::where('id', $ticketId)
+            ->where('tenant_id', tenancy()->tenant->id)
+            ->firstOrFail();
+
+        if ($attachment->message->ticket_id !== $ticket->id) {
+            abort(403);
+        }
+
+        if (! $attachment->isImage() || ! $attachment->exists()) {
+            abort(404);
+        }
+
+        return Storage::disk('support')->response(
+            $attachment->stored_path,
+            $attachment->original_name,
+            ['Content-Type' => $attachment->mime_type],
         );
     }
 }

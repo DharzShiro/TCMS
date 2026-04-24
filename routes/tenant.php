@@ -107,7 +107,8 @@ Route::middleware([
             Route::post('/',                                  [AdminSupportController::class, 'store'])              ->name('store');
             Route::get('/{id}',                              [AdminSupportController::class, 'show'])               ->name('show');
             Route::post('/{id}/reply',                       [AdminSupportController::class, 'reply'])              ->name('reply');
-            Route::get('/{ticketId}/attachment/{attachment}', [AdminSupportController::class, 'downloadAttachment']) ->name('attachment');
+            Route::get('/{ticketId}/attachment/{attachment}',         [AdminSupportController::class, 'downloadAttachment']) ->name('attachment');
+            Route::get('/{ticketId}/attachment/{attachment}/preview', [AdminSupportController::class, 'previewAttachment'])  ->name('preview');
         });
 
         Route::get('/subscription/expired', [AdminRenewalController::class, 'expired'])

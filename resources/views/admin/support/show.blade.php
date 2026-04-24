@@ -75,13 +75,33 @@
                     @if($msg->attachments->isNotEmpty())
                     <div class="mt-3 pt-3 border-t flex flex-wrap gap-2" style="border-color:var(--sa-border)">
                         @foreach($msg->attachments as $att)
-                        <a href="{{ route('admin.support.attachment', [$ticket->id, $att]) }}"
-                           class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border hover:opacity-80 transition"
-                           style="border-color:var(--sa-border);color:var(--sa-accent);background:var(--sa-bg)">
-                            <i class="fas {{ $att->isImage() ? 'fa-image' : 'fa-paperclip' }}"></i>
-                            {{ Str::limit($att->original_name, 28) }}
-                            <span style="color:var(--sa-text-muted)">({{ $att->formatted_size }})</span>
-                        </a>
+                            @if($att->isImage())
+                            <button type="button"
+                                    onclick="openLightbox('{{ route('admin.support.preview', [$ticket->id, $att]) }}', '{{ addslashes($att->original_name) }}')"
+                                    class="group block rounded-xl overflow-hidden border-2 hover:border-blue-400 transition"
+                                    style="border-color:var(--sa-border);background:var(--sa-bg)"
+                                    title="{{ $att->original_name }}">
+                                <img src="{{ route('admin.support.preview', [$ticket->id, $att]) }}"
+                                     alt="{{ $att->original_name }}"
+                                     style="max-height:160px;max-width:260px;width:auto;display:block;object-fit:cover;">
+                                <div class="px-2 py-1 text-xs flex items-center justify-between gap-3" style="color:var(--sa-text-muted)">
+                                    <span class="truncate max-w-[160px]">{{ Str::limit($att->original_name, 22) }}</span>
+                                    <a href="{{ route('admin.support.attachment', [$ticket->id, $att]) }}"
+                                       onclick="event.stopPropagation()"
+                                       title="Download" style="color:var(--sa-accent)">
+                                        <i class="fas fa-download text-xs"></i>
+                                    </a>
+                                </div>
+                            </button>
+                            @else
+                            <a href="{{ route('admin.support.attachment', [$ticket->id, $att]) }}"
+                               class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border hover:opacity-80 transition"
+                               style="border-color:var(--sa-border);color:var(--sa-accent);background:var(--sa-bg)">
+                                <i class="fas fa-paperclip"></i>
+                                {{ Str::limit($att->original_name, 28) }}
+                                <span style="color:var(--sa-text-muted)">({{ $att->formatted_size }})</span>
+                            </a>
+                            @endif
                         @endforeach
                     </div>
                     @endif
@@ -130,3 +150,47 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<div id="lbOverlay" onclick="closeLightbox()" style="
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,.88); align-items:center; justify-content:center;
+    padding:20px; cursor:zoom-out;
+">
+    <div onclick="event.stopPropagation()" style="position:relative;max-width:92vw;max-height:90vh;cursor:default;">
+        <img id="lbImg" src="" alt="" style="
+            max-width:92vw; max-height:86vh; border-radius:12px;
+            box-shadow:0 24px 64px rgba(0,0,0,.6); display:block; object-fit:contain;
+        ">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:12px;">
+            <span id="lbName" style="color:rgba(255,255,255,.75);font-size:13px;"></span>
+            <div style="display:flex;gap:8px;">
+                <a id="lbDownload" href="#" download
+                   style="color:white;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none;backdrop-filter:blur(6px);">
+                    <i class="fas fa-download mr-1"></i>Download
+                </a>
+                <button onclick="closeLightbox()"
+                        style="color:white;background:rgba(255,255,255,.15);padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;backdrop-filter:blur(6px);border:none;cursor:pointer;">
+                    <i class="fas fa-times mr-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+function openLightbox(src, name) {
+    document.getElementById('lbImg').src = src;
+    document.getElementById('lbName').textContent = name;
+    document.getElementById('lbDownload').href = src.replace('/preview', '');
+    const el = document.getElementById('lbOverlay');
+    el.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lbOverlay').style.display = 'none';
+    document.getElementById('lbImg').src = '';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+@endpush

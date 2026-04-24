@@ -132,4 +132,17 @@ class SuperAdminSupportController extends Controller
             $attachment->original_name,
         );
     }
+
+    public function previewAttachment(SupportAttachment $attachment)
+    {
+        if (! $attachment->isImage() || ! $attachment->exists()) {
+            abort(404);
+        }
+
+        return Storage::disk('support')->response(
+            $attachment->stored_path,
+            $attachment->original_name,
+            ['Content-Type' => $attachment->mime_type],
+        );
+    }
 }
