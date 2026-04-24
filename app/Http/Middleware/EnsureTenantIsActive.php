@@ -18,9 +18,7 @@ class EnsureTenantIsActive
             request()->session()->invalidate();
             request()->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
-                'email' => 'Your organization\'s access has been suspended. Please contact support.',
-            ]);
+            return response()->view('tenant-disabled', ['tenant' => $tenant], 403);
         }
 
         return $next($request);
