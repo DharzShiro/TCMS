@@ -33,14 +33,23 @@
                 Manage system releases, track tenant update progress, and push migrations.
             </p>
         </div>
-        <form action="{{ route('superadmin.releases.fetch') }}" method="POST">
-            @csrf
-            <button type="submit"
-                class="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold transition hover:opacity-90"
-                style="background:var(--sa-accent)">
-                <i class="fas fa-sync-alt"></i> Fetch from GitHub
-            </button>
-        </form>
+        <button id="fetchBtn"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold transition hover:opacity-90"
+            style="background:var(--sa-accent)">
+            <i id="fetchBtnIcon" class="fas fa-sync-alt"></i>
+            <span id="fetchBtnText">Fetch from GitHub</span>
+        </button>
+    </div>
+
+    {{-- Toast notification (AJAX feedback) --}}
+    <div id="fetchToast" style="
+        display:none; position:fixed; top:24px; right:24px; z-index:9999;
+        min-width:320px; max-width:420px; border-radius:14px; padding:16px 20px;
+        box-shadow:0 8px 32px rgba(0,0,0,.15); font-size:14px; font-weight:600;
+        display:none; align-items:center; gap:12px;
+    ">
+        <i id="fetchToastIcon" class="fas text-lg"></i>
+        <span id="fetchToastMsg"></span>
     </div>
 
     @if(session('success'))
@@ -173,3 +182,71 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const btn      = document.getElementById('fetchBtn');
+    const btnIcon  = document.getElementById('fetchBtnIcon');
+    const btnText  = document.getElementById('fetchBtnText');
+    const toast    = document.getElementById('fetchToast');
+    const toastIcon= document.getElementById('fetchToastIcon');
+    const toastMsg = document.getElementById('fetchToastMsg');
+
+    let toastTimer = null;
+
+    function showToast(type, message) {
+        clearTimeout(toastTimer);
+
+        const isSuccess = type === 'success';
+        toast.style.background  = isSuccess ? '#f0fdf4' : '#fff1f2';
+        toast.style.border      = isSuccess ? '1.5px solid #bbf7d0' : '1.5px solid #fecdd3';
+        toast.style.color       = isSuccess ? '#15803d' : '#be123c';
+        toastIcon.className     = 'fas text-lg ' + (isSuccess ? 'fa-check-circle' : 'fa-exclamation-circle');
+        toastMsg.textContent    = message;
+        toast.style.display     = 'flex';
+
+        toastTimer = setTimeout(() => { toast.style.display = 'none'; }, isSuccess ? 5000 : 7000);
+    }
+
+    function setLoading(loading) {
+        btn.disabled = loading;
+        if (loading) {
+            btnIcon.className = 'fas fa-spinner fa-spin';
+            btnText.textContent = 'Fetching…';
+        } else {
+            btnIcon.className = 'fas fa-sync-alt';
+            btnText.textContent = 'Fetch from GitHub';
+        }
+    }
+
+    btn.addEventListener('click', async function () {
+        setLoading(true);
+        toast.style.display = 'none';
+
+        try {
+            const res = await fetch('{{ route('superadmin.releases.fetch') }}', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                },
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.status === 'success') {
+                showToast('success', data.message ?? 'Fetch job dispatched!');
+                setTimeout(() => window.location.reload(), 4000);
+            } else {
+                showToast('error', data.message ?? 'Something went wrong.');
+                setLoading(false);
+            }
+        } catch (err) {
+            showToast('error', 'Network error — could not reach the server.');
+            setLoading(false);
+        }
+    });
+})();
+</script>
+@endpush

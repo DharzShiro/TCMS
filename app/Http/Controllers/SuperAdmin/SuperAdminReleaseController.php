@@ -43,9 +43,26 @@ class SuperAdminReleaseController extends Controller
         return view('superadmin.releases.show', compact('release', 'tenantStatuses', 'logs'));
     }
 
-    public function fetch()
+    public function fetch(Request $request)
     {
+        if (! $this->github->isConfigured()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'GitHub is not configured. Set GITHUB_OWNER and GITHUB_REPO in .env',
+                ], 422);
+            }
+            return back()->with('error', 'GitHub is not configured.');
+        }
+
         FetchGitHubReleasesJob::dispatch()->onQueue('updates');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Fetch job started. Releases will appear in a moment.',
+            ]);
+        }
 
         return back()->with('success', 'GitHub sync job dispatched. Refresh in a moment.');
     }
