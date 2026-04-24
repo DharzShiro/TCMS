@@ -39,6 +39,6 @@ class SupportAttachment extends CentralModel
 
     public function exists(): bool
     {
-        return Storage::exists($this->stored_path);
+        return Storage::disk('support')->exists($this->stored_path);
     }
 }

@@ -154,8 +154,11 @@ class SupportTicketService
 
     private function storeAttachment(SupportMessage $message, UploadedFile $file): SupportAttachment
     {
-        $directory = "support-attachments/{$message->ticket_id}";
-        $path      = $file->store($directory, 'local');
+        // Use the central 'support' disk — never tenant-scoped — so both
+        // superadmin and tenant admin can access the file without needing
+        // a tenant storage context.
+        $directory = "ticket-{$message->ticket_id}";
+        $path      = $file->store($directory, 'support');
 
         return SupportAttachment::create([
             'message_id'    => $message->id,
@@ -168,7 +171,7 @@ class SupportTicketService
 
     public function deleteAttachment(SupportAttachment $attachment): void
     {
-        Storage::disk('local')->delete($attachment->stored_path);
+        Storage::disk('support')->delete($attachment->stored_path);
         $attachment->delete();
     }
 }

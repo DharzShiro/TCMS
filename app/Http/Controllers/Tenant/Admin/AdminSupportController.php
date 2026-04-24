@@ -131,7 +131,7 @@ class AdminSupportController extends Controller
             abort(404);
         }
 
-        return Storage::disk('local')->download(
+        return Storage::disk('support')->download(
             $attachment->stored_path,
             $attachment->original_name,
         );

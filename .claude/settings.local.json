@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(php artisan *)"
+      "Bash(php artisan *)",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Bongyor\\\\Laravel\\\\TCMS\\\\storage\\\\app\\\\support\")"
     ]
   }
 }

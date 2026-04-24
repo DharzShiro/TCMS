@@ -38,6 +38,15 @@ return [
             'report' => false,
         ],
 
+        // Central disk for support attachments — intentionally NOT in tenancy.php
+        // filesystem.disks so it is never scoped to a tenant storage path.
+        // Both superadmin and tenant admin can read/write here without tenant context.
+        'support' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/support'),
+            'throw'  => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
