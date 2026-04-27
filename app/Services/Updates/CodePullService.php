@@ -17,8 +17,10 @@ class CodePullService
     public function __construct()
     {
         $this->basePath    = base_path();
-        $this->lockFile    = storage_path('app/code_pull.lock');
-        $this->versionFile = storage_path('app/code_version.txt');
+        // Use base_path() so these always resolve to the root storage folder
+        // even when called from inside a tenant context (storage_path() shifts there).
+        $this->lockFile    = base_path('storage/app/code_pull.lock');
+        $this->versionFile = base_path('storage/app/code_version.txt');
     }
 
     public function isEnabled(): bool
