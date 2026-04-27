@@ -257,7 +257,7 @@
                             </div>
 
                             <div class="nd-dropdown-footer">
-                                {{ $brandName }} &nbsp;·&nbsp; v1.0
+                                {{ $brandName }} &nbsp;·&nbsp; v{{ $_appVersion }}
                             </div>
                         </div>
                     </div>

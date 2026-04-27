@@ -66,7 +66,7 @@
                       :class="$store.darkMode.on
                           ? 'text-[#5b9cf6]'
                           : 'text-[#0057B8]'">
-                    TCMS v1.0
+                    TCMS v{{ $_appVersion }}
                 </span>
             </div>
         </div>
