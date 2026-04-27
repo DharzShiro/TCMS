@@ -67,6 +67,31 @@ class TenantVersionService
     }
 
     /**
+     * Run a tenant migration synchronously — no queue worker required.
+     * Used when the tenant admin clicks "Update Now" directly.
+     */
+    public function runUpdateNow(Tenant $tenant, SystemRelease $release, string $triggeredBy = 'tenant'): TenantUpdateLog
+    {
+        $status = $this->getOrCreateStatus($tenant);
+
+        $log = TenantUpdateLog::create([
+            'tenant_id'    => $tenant->id,
+            'release_id'   => $release->id,
+            'from_version' => $status->current_version,
+            'to_version'   => $release->version,
+            'status'       => 'queued',
+            'triggered_by' => $triggeredBy,
+        ]);
+
+        $status->update(['update_status' => 'queued']);
+
+        set_time_limit(300);
+        ProcessTenantUpdateJob::dispatchSync($tenant, $release, $log->id);
+
+        return $log->fresh();
+    }
+
+    /**
      * Queue a migration job for a specific tenant.
      */
     public function queueUpdate(Tenant $tenant, SystemRelease $release, string $triggeredBy = 'auto'): TenantUpdateLog

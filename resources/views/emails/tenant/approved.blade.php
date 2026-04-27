@@ -21,7 +21,7 @@ Here are your login credentials:
 @component('mail::panel')
 **📧 Admin Email:** {{ $tenant->admin_email }}
 **🔐 Temporary Password:** `{{ $password }}`
-**🌐 Subdomain:** {{ $tenant->subdomain }}.tcm.com
+**🌐 Subdomain:** {{ $tenant->subdomain }}.tcm.com:8000
 **📋 Subscription Plan:** {{ ucfirst($tenant->subscription) }}
 **📅 Expires At:** {{ $tenant->expires_at ? $tenant->expires_at->format('F d, Y') : 'N/A' }}
 @endcomponent

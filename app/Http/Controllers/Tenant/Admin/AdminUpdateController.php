@@ -53,8 +53,16 @@ class AdminUpdateController extends Controller
             return back()->with('info', 'Your system is already up to date.');
         }
 
-        $this->versions->queueUpdate($tenant, $release, 'tenant');
+        try {
+            $log = $this->versions->runUpdateNow($tenant, $release);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Update could not start: ' . $e->getMessage());
+        }
 
-        return back()->with('success', 'Update queued. This may take a minute. The page will reflect progress shortly.');
+        if ($log->status === 'completed') {
+            return back()->with('success', "Successfully updated to v{$release->version}. All changes are now live.");
+        }
+
+        return back()->with('error', 'Update failed: ' . ($log->failure_reason ?? 'Unknown error. Check your update logs or contact support.'));
     }
 }
