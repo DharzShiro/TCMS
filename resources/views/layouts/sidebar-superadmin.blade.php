@@ -222,6 +222,12 @@
         Update Management
     </a>
 
+    <a href="{{ route('superadmin.feedback.index') }}"
+       class="sb-link {{ request()->routeIs('superadmin.feedback*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-star"></i></span>
+        Feedback Inbox
+    </a>
+
     @php try { $unreadSupport = \App\Models\SupportTicket::where('unread_admin', '>', 0)->count(); } catch(\Throwable $e) { $unreadSupport = 0; } @endphp
     <a href="{{ route('superadmin.support.index') }}"
        class="sb-link {{ request()->routeIs('superadmin.support*') ? 'active' : '' }}">

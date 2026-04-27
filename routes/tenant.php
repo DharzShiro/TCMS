@@ -48,6 +48,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Tenant\WelcomeController;
 use App\Http\Controllers\Tenant\Admin\AdminUpdateController;
 use App\Http\Controllers\Tenant\Admin\AdminSupportController;
+use App\Http\Controllers\Tenant\Admin\AdminFeedbackController;
 
 
 Route::middleware([
@@ -98,6 +99,12 @@ Route::middleware([
         Route::prefix('update')->name('update.')->group(function () {
             Route::get('/',           [AdminUpdateController::class, 'index'])       ->name('index');
             Route::post('/apply',     [AdminUpdateController::class, 'applyUpdate']) ->name('apply');
+        });
+
+        // ── Feedback ───────────────────────────────────────────────────
+        Route::prefix('feedback')->name('feedback.')->group(function () {
+            Route::get('/',  [AdminFeedbackController::class, 'index']) ->name('index');
+            Route::post('/', [AdminFeedbackController::class, 'store']) ->name('store');
         });
 
         // ── Support Center ─────────────────────────────────────────────

@@ -291,6 +291,12 @@
         @endif
     </a>
 
+    <a href="{{ route('admin.feedback.index') }}"
+       class="sb-link {{ request()->routeIs('admin.feedback*') ? 'active' : '' }}">
+        <span class="sb-icon"><i class="fas fa-star"></i></span>
+        Feedback
+    </a>
+
     <a href="{{ route('admin.support.index') }}"
        class="sb-link {{ request()->routeIs('admin.support*') ? 'active' : '' }}">
         <span class="sb-icon"><i class="fas fa-headset"></i></span>

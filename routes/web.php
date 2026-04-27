@@ -14,6 +14,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SuperAdmin\SuperAdminReleaseController;
 use App\Http\Controllers\SuperAdmin\SuperAdminSupportController;
+use App\Http\Controllers\SuperAdmin\SuperAdminFeedbackController;
 
 foreach (config('tenancy.central_domains') as $domain) {
     Route::domain($domain)
@@ -130,6 +131,9 @@ foreach (config('tenancy.central_domains') as $domain) {
                     Route::post('/{release}/push-all',                  [SuperAdminReleaseController::class, 'pushUpdateToAll'])  ->name('push-all');
                     Route::post('/{release}/push-tenant',               [SuperAdminReleaseController::class, 'pushUpdateToTenant'])->name('push-tenant');
                 });
+
+                // ── Feedback Inbox ────────────────────────────────────────
+                Route::get('/feedback', [SuperAdminFeedbackController::class, 'index'])->name('feedback.index');
 
                 // ── Support Inbox ─────────────────────────────────────────
                 Route::prefix('support')->name('support.')->group(function () {
