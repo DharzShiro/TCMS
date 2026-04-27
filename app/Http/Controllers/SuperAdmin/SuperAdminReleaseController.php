@@ -56,34 +56,26 @@ class SuperAdminReleaseController extends Controller
         }
 
         try {
-            $synced = $this->github->syncToDatabase();
+            $stats = $this->github->syncToDatabase();
         } catch (\Throwable $e) {
             if ($request->expectsJson()) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'GitHub fetch failed: ' . $e->getMessage(),
-                ], 500);
+                return response()->json(['status' => 'error', 'message' => 'GitHub fetch failed: ' . $e->getMessage()], 500);
             }
             return back()->with('error', 'GitHub fetch failed: ' . $e->getMessage());
         }
 
-        // Refresh all tenant version badges against the newly synced active release
         $this->versions->syncAllStatuses();
 
+        $message = $this->buildSyncMessage($stats);
+        $status  = $stats['synced'] > 0 ? 'success' : ($stats['fetched'] === 0 ? 'warning' : 'warning');
+
         if ($request->expectsJson()) {
-            return response()->json([
-                'status'  => $synced > 0 ? 'success' : 'warning',
-                'message' => $synced > 0
-                    ? "Synced {$synced} release(s) from GitHub."
-                    : 'GitHub returned releases but none passed filters. Check that your tags use valid semver (e.g. v1.4.0) and are not marked as pre-releases.',
-            ]);
+            return response()->json(['status' => $status, 'message' => $message]);
         }
 
-        if ($synced === 0) {
-            return back()->with('warning', 'GitHub returned releases but none passed filters. Check that your tags use valid semver (e.g. v1.4.0) and are not marked as pre-releases.');
-        }
-
-        return back()->with('success', "Synced {$synced} release(s) from GitHub.");
+        return $stats['synced'] > 0
+            ? back()->with('success', $message)
+            : back()->with('warning', $message);
     }
 
     public function deploy(SystemRelease $release)
@@ -91,6 +83,32 @@ class SuperAdminReleaseController extends Controller
         DeployApplicationJob::dispatch($release)->onQueue('updates');
 
         return back()->with('success', "Deployment of v{$release->version} started. Code, UI, and tenant migrations will be applied automatically in the background.");
+    }
+
+    private function buildSyncMessage(array $stats): string
+    {
+        if ($stats['fetched'] === 0) {
+            return 'GitHub returned no releases. Make sure you have published releases (not just tags) at github.com → Releases.';
+        }
+
+        if ($stats['synced'] > 0) {
+            $msg = "Synced {$stats['synced']} of {$stats['fetched']} release(s) from GitHub.";
+            if ($stats['skipped_prerelease'] > 0) {
+                $msg .= " ({$stats['skipped_prerelease']} pre-release(s) skipped — enable GITHUB_INCLUDE_PRERELEASES=true to include them)";
+            }
+            return $msg;
+        }
+
+        // synced === 0 but fetched > 0
+        $parts = [];
+        if ($stats['skipped_prerelease'] > 0) {
+            $parts[] = "{$stats['skipped_prerelease']} skipped because they are marked as Pre-release on GitHub";
+        }
+        if ($stats['skipped_invalid_tag'] > 0) {
+            $parts[] = "{$stats['skipped_invalid_tag']} skipped due to invalid tag format (expected v1.2.3)";
+        }
+        $detail = $parts ? implode('; ', $parts) . '.' : 'Unknown filter reason.';
+        return "Fetched {$stats['fetched']} release(s) from GitHub but none were saved — {$detail}";
     }
 
     public function undeploy(SystemRelease $release)

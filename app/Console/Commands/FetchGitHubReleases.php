@@ -20,9 +20,9 @@ class FetchGitHubReleases extends Command
 
         $this->info('Fetching releases from GitHub…');
 
-        $synced = $github->syncToDatabase();
+        $stats = $github->syncToDatabase();
 
-        $this->info("Synced {$synced} release(s) to database.");
+        $this->info("Fetched: {$stats['fetched']} | Synced: {$stats['synced']} | Skipped prerelease: {$stats['skipped_prerelease']} | Skipped invalid tag: {$stats['skipped_invalid_tag']}");
 
         if ($this->option('sync')) {
             $this->call('releases:sync-tenants');

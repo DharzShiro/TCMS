@@ -66,21 +66,26 @@ class GitHubReleaseService
         return $data;
     }
 
-    public function syncToDatabase(): int
+    /**
+     * @return array{synced:int, fetched:int, skipped_prerelease:int, skipped_invalid_tag:int}
+     */
+    public function syncToDatabase(): array
     {
         $releases = $this->fetchReleases();
-        $synced   = 0;
+
+        $stats = ['synced' => 0, 'fetched' => count($releases), 'skipped_prerelease' => 0, 'skipped_invalid_tag' => 0];
 
         foreach ($releases as $release) {
-            if (! $this->includePrereleases && $release['prerelease']) {
+            if (! $this->includePrereleases && ($release['prerelease'] ?? false)) {
+                $stats['skipped_prerelease']++;
                 continue;
             }
 
             // Strip leading 'v' and any accidental dot (handles v1.2.0 and v.1.2.0)
             $version = ltrim($release['tag_name'], 'v.');
 
-            // Skip if not a valid semver-ish string
             if (! preg_match('/^\d+\.\d+/', $version)) {
+                $stats['skipped_invalid_tag']++;
                 continue;
             }
 
@@ -98,13 +103,12 @@ class GitHubReleaseService
                 ]
             );
 
-            $synced++;
+            $stats['synced']++;
         }
 
-        // Auto-activate the newest stable release
         $this->autoActivateLatest();
 
-        return $synced;
+        return $stats;
     }
 
     public function getLatestVersion(): ?string
