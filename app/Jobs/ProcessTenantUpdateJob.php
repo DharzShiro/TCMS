@@ -15,6 +15,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use App\Services\Updates\CodePullService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
@@ -45,13 +46,26 @@ class ProcessTenantUpdateJob implements ShouldQueue
             ->update(['update_status' => 'running']);
 
         try {
-            // Run pending tenant migrations for this specific tenant
+            $output = '';
+
+            // Step 1 — Pull new code from GitHub (once per server per release)
+            $codePull = new CodePullService();
+            if ($codePull->isEnabled() && ! $codePull->isCodeUpToDate($this->release->version)) {
+                $pullResult = $codePull->pull($this->release->version);
+                $output .= $pullResult['output'] . "\n\n";
+
+                if (! $pullResult['success']) {
+                    throw new \RuntimeException('Code pull failed: ' . $pullResult['output']);
+                }
+            }
+
+            // Step 2 — Run pending tenant migrations for this specific tenant
             Artisan::call('tenants:migrate', [
                 '--tenants' => [$this->tenant->id],
                 '--force'   => true,
             ]);
 
-            $output = Artisan::output();
+            $output .= Artisan::output();
 
             $log->update([
                 'status'       => 'completed',

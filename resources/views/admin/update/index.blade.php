@@ -115,7 +115,7 @@
                     <button type="submit"
                             class="px-5 py-2.5 rounded-xl text-white text-sm font-bold hover:opacity-90 transition"
                             style="background:var(--sa-accent)"
-                            onclick="return confirm('Apply the system update now? Your system will run database migrations. This is safe and reversible.')">
+                            onclick="return confirm('Apply the system update now?\n\nThis will:\n1. Download the latest code from GitHub\n2. Install any new dependencies\n3. Run database migrations\n4. Rebuild caches\n\nThe page will refresh automatically. This usually takes 1–2 minutes.')">
                         <i class="fas fa-rocket mr-1"></i> Update Now
                     </button>
                 </form>
@@ -147,7 +147,8 @@
             <form action="{{ route('admin.update.apply') }}" method="POST" class="mt-3">
                 @csrf
                 <button type="submit" class="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
-                        style="background:#CE1126">Retry Update</button>
+                        style="background:#CE1126"
+                        onclick="return confirm('Retry the update? This will re-pull code from GitHub and re-run migrations.')">Retry Update</button>
             </form>
             @endif
         </div>

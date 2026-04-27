@@ -38,4 +38,22 @@ return [
     | How many releases to keep in the database (oldest are trimmed).
     */
     'max_stored_releases' => env('GITHUB_MAX_RELEASES', 20),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Self-Update (git pull) Settings
+    |--------------------------------------------------------------------------
+    |
+    | When a tenant clicks "Update Now", the server automatically pulls the
+    | latest code from GitHub before running database migrations.
+    |
+    |   GITHUB_AUTO_PULL=true     — enable self-updating (default)
+    |   PHP_BINARY=php            — path/command to invoke PHP (e.g. php8.2)
+    |   COMPOSER_COMMAND=composer — path/command to invoke Composer
+    |
+    | Set GITHUB_AUTO_PULL=false only if code is deployed separately (e.g. CI/CD).
+    */
+    'auto_pull'        => env('GITHUB_AUTO_PULL', true),
+    'php_binary'       => env('PHP_BINARY', 'php'),
+    'composer_command' => env('COMPOSER_COMMAND', 'composer'),
 ];
