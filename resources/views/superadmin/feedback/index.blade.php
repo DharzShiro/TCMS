@@ -1,4 +1,4 @@
-@extends('layouts.superadmin')
+@extends('layouts.app')
 
 @section('title', 'Feedback Inbox')
 
