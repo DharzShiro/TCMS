@@ -104,6 +104,15 @@ class GitHubReleaseService
      */
     public function syncToDatabase(): array
     {
+        // Remove tag-fallback records that now have a proper GitHub Release counterpart
+        // for the same tag_name, to eliminate duplicates created by the tags fallback.
+        $realTagNames = SystemRelease::where('github_id', 'NOT LIKE', 'tag:%')->pluck('tag_name');
+        if ($realTagNames->isNotEmpty()) {
+            SystemRelease::where('github_id', 'LIKE', 'tag:%')
+                ->whereIn('tag_name', $realTagNames)
+                ->delete();
+        }
+
         $releases = $this->fetchReleases();
 
         $stats = [
@@ -127,8 +136,26 @@ class GitHubReleaseService
                 continue;
             }
 
+            $githubId     = (string) $release['id'];
+            $isTagFallback = str_starts_with($githubId, 'tag:');
+
+            if ($isTagFallback) {
+                // Skip tags that already have a proper GitHub Release record.
+                if (SystemRelease::where('tag_name', $release['tag_name'])
+                        ->where('github_id', 'NOT LIKE', 'tag:%')
+                        ->exists()) {
+                    $stats['synced']++;
+                    continue;
+                }
+            } else {
+                // Real release arriving — remove any stale tag-fallback record for this tag.
+                SystemRelease::where('github_id', 'LIKE', 'tag:%')
+                    ->where('tag_name', $release['tag_name'])
+                    ->delete();
+            }
+
             SystemRelease::updateOrCreate(
-                ['github_id' => (string) $release['id']],
+                ['github_id' => $githubId],
                 [
                     'tag_name'      => $release['tag_name'],
                     'version'       => $version,
