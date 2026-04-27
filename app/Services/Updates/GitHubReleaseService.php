@@ -41,14 +41,29 @@ class GitHubReleaseService
         ]);
 
         if (! $response->successful()) {
-            Log::error('[GitHub] Failed to fetch releases', [
-                'status' => $response->status(),
-                'body'   => $response->body(),
-            ]);
-            return [];
+            $status = $response->status();
+            $body   = $response->body();
+            Log::error('[GitHub] Failed to fetch releases', ['status' => $status, 'body' => $body]);
+
+            $hint = match (true) {
+                $status === 401 => 'Invalid or expired GITHUB_TOKEN.',
+                $status === 403 => str_contains($body, 'rate limit')
+                    ? 'GitHub API rate limit reached. Add a GITHUB_TOKEN to increase the limit.'
+                    : 'GitHub API returned 403 Forbidden.',
+                $status === 404 => 'Repository not found. Check GITHUB_OWNER and GITHUB_REPO in .env.',
+                default         => "GitHub API returned HTTP {$status}.",
+            };
+
+            throw new \RuntimeException($hint);
         }
 
-        return $response->json() ?? [];
+        $data = $response->json();
+
+        if (! is_array($data)) {
+            throw new \RuntimeException('GitHub API returned an unexpected response format.');
+        }
+
+        return $data;
     }
 
     public function syncToDatabase(): int
@@ -61,7 +76,8 @@ class GitHubReleaseService
                 continue;
             }
 
-            $version = ltrim($release['tag_name'], 'v');
+            // Strip leading 'v' and any accidental dot (handles v1.2.0 and v.1.2.0)
+            $version = ltrim($release['tag_name'], 'v.');
 
             // Skip if not a valid semver-ish string
             if (! preg_match('/^\d+\.\d+/', $version)) {

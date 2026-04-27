@@ -72,9 +72,15 @@ class SuperAdminReleaseController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
-                'status'  => 'success',
-                'message' => "Synced {$synced} release(s) from GitHub.",
+                'status'  => $synced > 0 ? 'success' : 'warning',
+                'message' => $synced > 0
+                    ? "Synced {$synced} release(s) from GitHub."
+                    : 'GitHub returned releases but none passed filters. Check that your tags use valid semver (e.g. v1.4.0) and are not marked as pre-releases.',
             ]);
+        }
+
+        if ($synced === 0) {
+            return back()->with('warning', 'GitHub returned releases but none passed filters. Check that your tags use valid semver (e.g. v1.4.0) and are not marked as pre-releases.');
         }
 
         return back()->with('success', "Synced {$synced} release(s) from GitHub.");
