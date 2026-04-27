@@ -21,6 +21,21 @@
         </p>
     </div>
 
+    {{-- System Version Notice --}}
+    @php $appVersion = $_appVersion ?? config('github.current_version', '1.0.0'); @endphp
+    <div class="rounded-xl p-4 flex items-center gap-3"
+         style="background:rgba(0,87,184,.08);border:1px solid rgba(0,87,184,.2)">
+        <i class="fas fa-rocket text-lg" style="color:#0057B8"></i>
+        <div>
+            <p class="font-semibold text-sm" style="color:#003087">
+                System Version v{{ $appVersion }}
+            </p>
+            <p class="text-xs" style="color:#5a7aaa">
+                Your system is up to date. Last updated {{ now()->format('M d, Y') }}.
+            </p>
+        </div>
+    </div>
+
     {{-- Stats Cards --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         @php
