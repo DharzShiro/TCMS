@@ -3,6 +3,7 @@
 namespace App\Services\Updates;
 
 use App\Models\SystemRelease;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -29,14 +30,10 @@ class GitHubReleaseService
             return [];
         }
 
-        $request = Http::withHeaders($this->headers())->timeout(15);
+        $http = $this->baseRequest();
 
-        // Skip SSL verification on local dev (Windows has no CA bundle by default)
-        if (app()->environment('local')) {
-            $request = $request->withoutVerifying();
-        }
-
-        $response = $request->get("{$this->baseUrl}/repos/{$this->owner}/{$this->repo}/releases", [
+        // ── Try the Releases API first ──────────────────────────────────────
+        $response = $http->get("{$this->baseUrl}/repos/{$this->owner}/{$this->repo}/releases", [
             'per_page' => config('github.max_stored_releases', 20),
         ]);
 
@@ -57,13 +54,49 @@ class GitHubReleaseService
             throw new \RuntimeException($hint);
         }
 
-        $data = $response->json();
+        $releases = $response->json();
 
-        if (! is_array($data)) {
-            throw new \RuntimeException('GitHub API returned an unexpected response format.');
+        if (is_array($releases) && count($releases) > 0) {
+            return $releases;
         }
 
-        return $data;
+        // ── Fallback: Tags API (repo has tags but no GitHub Releases yet) ──
+        Log::info('[GitHub] Releases API returned empty — falling back to Tags API.');
+
+        $tagsResponse = $http->get("{$this->baseUrl}/repos/{$this->owner}/{$this->repo}/tags", [
+            'per_page' => config('github.max_stored_releases', 20),
+        ]);
+
+        if (! $tagsResponse->successful() || ! is_array($tagsResponse->json())) {
+            return [];
+        }
+
+        $tags = $tagsResponse->json();
+
+        if (empty($tags)) {
+            return [];
+        }
+
+        // Transform tags into release-shaped records.
+        // Tags are returned newest-first; we assign descending timestamps so
+        // version ordering is preserved inside the DB without extra API calls.
+        $base = now();
+
+        return array_values(array_map(function (array $tag, int $index) use ($base, $tags) {
+            $tagName = $tag['name'];
+            return [
+                // Use a prefixed ID so it never collides with real numeric release IDs.
+                'id'           => 'tag:' . $tagName,
+                'tag_name'     => $tagName,
+                'name'         => $tagName,
+                'body'         => '',
+                'prerelease'   => false,
+                'html_url'     => "https://github.com/{$this->owner}/{$this->repo}/releases/tag/{$tagName}",
+                'zipball_url'  => $tag['zipball_url'] ?? null,
+                // Newest tag → most recent timestamp; each step back is -1 day.
+                'published_at' => $base->copy()->subDays($index)->toISOString(),
+            ];
+        }, $tags, array_keys($tags)));
     }
 
     /**
@@ -73,7 +106,12 @@ class GitHubReleaseService
     {
         $releases = $this->fetchReleases();
 
-        $stats = ['synced' => 0, 'fetched' => count($releases), 'skipped_prerelease' => 0, 'skipped_invalid_tag' => 0];
+        $stats = [
+            'synced'              => 0,
+            'fetched'             => count($releases),
+            'skipped_prerelease'  => 0,
+            'skipped_invalid_tag' => 0,
+        ];
 
         foreach ($releases as $release) {
             if (! $this->includePrereleases && ($release['prerelease'] ?? false)) {
@@ -122,16 +160,26 @@ class GitHubReleaseService
 
     private function autoActivateLatest(): void
     {
-        // Mark the single most recent deployed+non-prerelease release as active
         $latest = SystemRelease::where('is_prerelease', false)
             ->orderByDesc('published_at')
             ->first();
 
         if ($latest && ! $latest->is_active) {
-            // Only auto-activate — never auto-deploy; admin must mark deployed
             SystemRelease::where('id', '!=', $latest->id)->update(['is_active' => false]);
             $latest->update(['is_active' => true]);
         }
+    }
+
+    private function baseRequest(): PendingRequest
+    {
+        $request = Http::withHeaders($this->headers())->timeout(15);
+
+        // Skip SSL verification on local dev (Windows has no CA bundle by default)
+        if (app()->environment('local')) {
+            $request = $request->withoutVerifying();
+        }
+
+        return $request;
     }
 
     private function headers(): array
