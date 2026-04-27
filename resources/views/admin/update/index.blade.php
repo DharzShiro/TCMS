@@ -122,8 +122,11 @@
             </div>
             @if($release?->body)
             <div class="mt-4 pt-4 border-t" style="border-color:rgba(179,138,0,.2)">
-                <p class="text-xs font-semibold mb-2" style="color:var(--sa-text-muted)">What's new:</p>
-                <div class="text-xs leading-relaxed whitespace-pre-wrap" style="color:var(--sa-text)">{{ Str::limit($release->body, 600) }}</div>
+                <p class="text-xs font-semibold mb-3" style="color:var(--sa-text-muted)">What's new in v{{ $release->version }}:</p>
+
+                <div class="markdown-body markdown-body--sm rounded-lg p-4"
+                     style="border:1px solid rgba(179,138,0,.2)"
+                     id="rn-tenant-preview"></div>
             </div>
             @endif
         </div>
@@ -164,7 +167,7 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium" style="color:var(--sa-text)">{{ $r->name }}</p>
                     @if($r->body)
-                    <p class="text-xs mt-0.5 line-clamp-2" style="color:var(--sa-text-muted)">{{ $r->body }}</p>
+                    <p class="text-xs mt-0.5 line-clamp-2 font-mono" style="color:var(--sa-text-muted)">{{ Str::of($r->body)->replaceMatches('/^#+\s*/m','')->limit(120) }}</p>
                     @endif
                     <p class="text-xs mt-1" style="color:var(--sa-text-muted)">{{ $r->published_at?->format('M j, Y') }}</p>
                 </div>
@@ -216,4 +219,21 @@
     @endif
 
 </div>
+
+{{-- GitHub-style markdown rendering --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css">
+<style>
+    .markdown-body { font-size:14px;line-height:1.6;color:#24292f;background:transparent; }
+    .markdown-body--sm { font-size:12px; }
+    .markdown-body--sm h1{font-size:1.3em}.markdown-body--sm h2{font-size:1.15em}.markdown-body--sm h3{font-size:1em}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        marked.use({ gfm: true, breaks: true });
+        const el = document.getElementById('rn-tenant-preview');
+        const md = @json($release?->body ?? '');
+        if (el && md) el.innerHTML = marked.parse(md);
+    });
+</script>
 @endsection

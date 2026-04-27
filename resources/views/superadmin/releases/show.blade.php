@@ -79,18 +79,22 @@
     {{-- Release Notes --}}
     @if($release->body)
     <div class="rounded-2xl border-2 p-6" style="background:var(--sa-bg);border-color:var(--sa-border)">
-        <h2 class="font-bold mb-4 flex items-center gap-2" style="color:var(--sa-primary)">
-            <i class="fas fa-file-alt" style="color:var(--sa-accent)"></i> Release Notes
-        </h2>
-        <div class="text-sm leading-relaxed whitespace-pre-wrap rounded-xl p-4"
-             style="background:var(--sa-bg);color:var(--sa-text);border:1px solid var(--sa-border)">{{ $release->body }}</div>
-        @if($release->github_url)
-        <a href="{{ $release->github_url }}" target="_blank"
-           class="inline-flex items-center gap-2 mt-4 text-sm font-medium"
-           style="color:var(--sa-accent)">
-            <i class="fab fa-github"></i> View on GitHub
-        </a>
-        @endif
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="font-bold flex items-center gap-2" style="color:var(--sa-primary)">
+                <i class="fas fa-file-alt" style="color:var(--sa-accent)"></i> Release Notes
+            </h2>
+            @if($release->github_url)
+            <a href="{{ $release->github_url }}" target="_blank"
+               class="inline-flex items-center gap-2 text-sm font-medium hover:underline"
+               style="color:var(--sa-accent)">
+                <i class="fab fa-github"></i> View on GitHub
+            </a>
+            @endif
+        </div>
+
+        <div class="markdown-body rounded-xl p-5"
+             style="border:1px solid var(--sa-border)"
+             id="rn-superadmin-preview"></div>
     </div>
     @endif
 
@@ -224,4 +228,19 @@
     @endif
 
 </div>
+
+{{-- GitHub-style markdown rendering --}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown-light.min.css">
+<style>
+    .markdown-body { font-size:14px;line-height:1.6;color:#24292f;background:transparent; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        marked.use({ gfm: true, breaks: true });
+        const el = document.getElementById('rn-superadmin-preview');
+        const md = @json($release->body ?? '');
+        if (el && md) el.innerHTML = marked.parse(md);
+    });
+</script>
 @endsection
