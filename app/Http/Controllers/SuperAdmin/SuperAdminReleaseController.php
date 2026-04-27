@@ -20,7 +20,11 @@ class SuperAdminReleaseController extends Controller
 
     public function index()
     {
-        $releases = SystemRelease::orderByDesc('published_at')->paginate(15);
+        $releases = SystemRelease::orderByRaw('
+            CAST(SUBSTRING_INDEX(version, ".", 1) AS UNSIGNED) DESC,
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(version, ".", 2), ".", -1) AS UNSIGNED) DESC,
+            CAST(SUBSTRING_INDEX(version, ".", -1) AS UNSIGNED) DESC
+        ')->paginate(15);
         $summary  = $this->versions->getUpdateSummary();
         $latest   = SystemRelease::latestActive();
 

@@ -82,18 +82,20 @@ class GitHubReleaseService
         // version ordering is preserved inside the DB without extra API calls.
         $base = now();
 
-        return array_values(array_map(function (array $tag, int $index) use ($base, $tags) {
+        $appName = config('app.name', 'TCMS');
+
+        return array_values(array_map(function (array $tag, int $index) use ($base, $appName) {
             $tagName = $tag['name'];
+            $version = ltrim($tagName, 'v.');
             return [
-                // Use a prefixed ID so it never collides with real numeric release IDs.
                 'id'           => 'tag:' . $tagName,
                 'tag_name'     => $tagName,
-                'name'         => $tagName,
+                'name'         => "{$appName} {$tagName}",
                 'body'         => '',
                 'prerelease'   => false,
                 'html_url'     => "https://github.com/{$this->owner}/{$this->repo}/releases/tag/{$tagName}",
                 'zipball_url'  => $tag['zipball_url'] ?? null,
-                // Newest tag → most recent timestamp; each step back is -1 day.
+                // Assign dates by semver position so they never collide with each other.
                 'published_at' => $base->copy()->subDays($index)->toISOString(),
             ];
         }, $tags, array_keys($tags)));
@@ -188,7 +190,7 @@ class GitHubReleaseService
     private function autoActivateLatest(): void
     {
         $latest = SystemRelease::where('is_prerelease', false)
-            ->orderByDesc('published_at')
+            ->semverDesc()
             ->first();
 
         if ($latest && ! $latest->is_active) {

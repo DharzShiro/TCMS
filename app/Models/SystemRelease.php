@@ -44,20 +44,25 @@ class SystemRelease extends CentralModel
         return $query->where('is_deployed', true);
     }
 
+    public function scopeSemverDesc($query)
+    {
+        return $query->orderByRaw('
+            CAST(SUBSTRING_INDEX(version, ".", 1) AS UNSIGNED) DESC,
+            CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(version, ".", 2), ".", -1) AS UNSIGNED) DESC,
+            CAST(SUBSTRING_INDEX(version, ".", -1) AS UNSIGNED) DESC
+        ');
+    }
+
     /** Newest release with is_active=true — use for tenant update targeting. */
     public static function latestActive(): ?self
     {
-        return static::active()
-            ->orderByDesc('published_at')
-            ->first();
+        return static::active()->semverDesc()->first();
     }
 
     /** Newest release that is both active AND deployed — use for "production version" display. */
     public static function latestDeployed(): ?self
     {
-        return static::active()->deployed()
-            ->orderByDesc('published_at')
-            ->first();
+        return static::active()->deployed()->semverDesc()->first();
     }
 
     public function isNewerThan(string $version): bool
