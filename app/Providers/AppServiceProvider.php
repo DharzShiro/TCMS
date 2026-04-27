@@ -9,6 +9,7 @@ use App\Listeners\NotifyAdminOfNewRelease;
 use App\Listeners\NotifyAdminOfTenantUpdate;
 use App\Models\SystemRelease;
 use App\Models\TenantVersionStatus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
@@ -53,33 +54,41 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ── Dynamic version display ───────────────────────────────────────
-        // Resolved once per request and cached in the service container so
-        // both layouts.navigation and layouts.sidebar only hit the DB once.
-        // Central domain  → latest active release version (admin sees newest fetched version)
-        // Tenant domain   → tenant's own deployed version (trainer/trainee see their version)
-        $resolveVersion = static function (): string {
-            if (app()->has('_app_display_version')) {
-                return app('_app_display_version');
-            }
+        // Central domain  → latest active release version
+        // Tenant domain   → this tenant's own deployed version
+        // Raw DB::table() used deliberately — bypasses Eloquent connection
+        // routing so both central and tenant contexts hit the right database.
+        View::composer(['layouts.navigation', 'layouts.sidebar'], function ($view) {
+            $version = config('github.current_version', '1.0.0');
 
             try {
-                if (tenancy()->initialized()) {
-                    $status  = TenantVersionStatus::where('tenant_id', tenancy()->tenant->id)->first();
-                    $version = $status?->current_version ?? config('github.current_version', '1.0.0');
+                $tenant = tenancy()->tenant ?? null;
+
+                if ($tenant !== null) {
+                    $row = DB::connection('mysql')
+                        ->table('tenant_version_statuses')
+                        ->where('tenant_id', $tenant->id)
+                        ->value('current_version');
+
+                    if ($row) {
+                        $version = $row;
+                    }
                 } else {
-                    $release = SystemRelease::latestActive();
-                    $version = $release?->version ?? config('github.current_version', '1.0.0');
+                    $row = DB::connection('mysql')
+                        ->table('system_releases')
+                        ->where('is_active', true)
+                        ->orderByDesc('published_at')
+                        ->value('version');
+
+                    if ($row) {
+                        $version = $row;
+                    }
                 }
             } catch (\Throwable) {
-                $version = config('github.current_version', '1.0.0');
+                // Keep config fallback — never crash a page over a missing version
             }
 
-            app()->instance('_app_display_version', $version);
-            return $version;
-        };
-
-        View::composer(['layouts.navigation', 'layouts.sidebar'], function ($view) use ($resolveVersion) {
-            $view->with('_appVersion', $resolveVersion());
+            $view->with('_appVersion', $version);
         });
     }
 }
