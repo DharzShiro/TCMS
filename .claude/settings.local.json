@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(php artisan *)",
-      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Bongyor\\\\Laravel\\\\TCMS\\\\storage\\\\app\\\\support\")"
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Bongyor\\\\Laravel\\\\TCMS\\\\storage\\\\app\\\\support\")",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Bongyor\\\\Laravel\\\\TCMS\" -Depth 2 -Directory | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\Bongyor\\\\Laravel\\\\TCMS\", \".\"\\) })",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Bongyor\\\\Laravel\\\\TCMS\" -MaxDepth 0 | Where-Object { $_.PSIsContainer -eq $false } | Select-Object Name)"
     ]
   }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\DeployApplicationJob;
 use App\Models\SystemRelease;
 use App\Models\Tenant;
 use App\Models\TenantVersionStatus;
@@ -81,15 +82,9 @@ class SuperAdminReleaseController extends Controller
 
     public function deploy(SystemRelease $release)
     {
-        $release->update(['is_deployed' => true, 'is_active' => true]);
+        DeployApplicationJob::dispatch($release)->onQueue('updates');
 
-        // Mark all other releases inactive
-        SystemRelease::where('id', '!=', $release->id)->update(['is_active' => false]);
-
-        // Sync all tenant statuses against this new active release
-        $this->versions->syncAllStatuses();
-
-        return back()->with('success', "Release v{$release->version} marked as deployed. Tenant update badges refreshed.");
+        return back()->with('success', "Deployment of v{$release->version} started. Code, UI, and tenant migrations will be applied automatically in the background.");
     }
 
     public function undeploy(SystemRelease $release)
