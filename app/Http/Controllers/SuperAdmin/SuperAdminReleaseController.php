@@ -84,9 +84,16 @@ class SuperAdminReleaseController extends Controller
 
     public function deploy(SystemRelease $release)
     {
-        DeployApplicationJob::dispatch($release)->onQueue('updates');
+        // Mark this release as deployed and active immediately.
+        $release->update(['is_deployed' => true, 'is_active' => true]);
 
-        return back()->with('success', "Deployment of v{$release->version} started. Code, UI, and tenant migrations will be applied automatically in the background.");
+        // Deactivate all other releases.
+        SystemRelease::where('id', '!=', $release->id)->update(['is_active' => false]);
+
+        // Tell all tenants an update is available.
+        $this->versions->syncAllStatuses();
+
+        return back()->with('success', "v{$release->version} is now deployed and active. Tenants have been notified and can apply the update from their dashboard.");
     }
 
     private function buildSyncMessage(array $stats): string
