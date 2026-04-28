@@ -48,6 +48,17 @@
             Here's an overview of your training progress.
         </p>
     </div>
+    
+        {{-- Page Header --}}
+    <div>
+        <h1 class="text-2xl font-bold" style="color:var(--db-primary);">
+            <i class="fas fa-chart-line mr-2" style="color:var(--db-red);"></i> My Dashboard
+        </h1>
+        <p class="text-sm mt-1" style="color:var(--db-muted);">
+            Welcome back, <span class="font-semibold" style="color:var(--db-accent);">{{ Auth::user()->name }}</span>!
+            Here's an overview of your training progress.
+        </p>
+    </div>
 
     {{-- Stats Cards Row --}}
     <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
