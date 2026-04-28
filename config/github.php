@@ -55,5 +55,6 @@ return [
     */
     'auto_pull'        => env('GITHUB_AUTO_PULL', true),
     'php_binary'       => env('PHP_BINARY', 'php'),
-    'composer_command' => env('COMPOSER_COMMAND', 'composer'),
+    'git_binary'       => env('GIT_BINARY', 'git'),
+    'composer_command' => env('COMPOSER_BINARY', env('COMPOSER_COMMAND', 'composer')),
 ];

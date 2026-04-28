@@ -80,16 +80,17 @@ class CodePullService
             $sections = [];
 
             // 1 — Verify git is available
-            $gitVer = $this->run('git --version');
+            $git    = $this->gitBin();
+            $gitVer = $this->run("\"{$git}\" --version");
             if ($gitVer['exit'] !== 0) {
-                throw new \RuntimeException('git is not available in the server PATH. Install git and ensure it is accessible by the web server user.');
+                throw new \RuntimeException('git is not available. Set GIT_BINARY in .env to the full path of git.exe.');
             }
 
             // 2 — Snapshot composer.lock hash before pull
             $composerLockBefore = $this->composerLockHash();
 
             // 3 — git pull
-            $pull = $this->run('git pull');
+            $pull = $this->run("\"{$git}\" pull");
             $sections[] = "=== git pull ===\n" . $pull['out'];
 
             if ($pull['exit'] !== 0) {
@@ -175,6 +176,11 @@ class CodePullService
     private function phpBin(): string
     {
         return config('github.php_binary', 'php');
+    }
+
+    private function gitBin(): string
+    {
+        return config('github.git_binary', 'git');
     }
 
     private function composerBin(): string
