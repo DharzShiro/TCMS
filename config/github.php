@@ -57,4 +57,10 @@ return [
     'php_binary'       => env('PHP_BINARY', 'php'),
     'git_binary'       => env('GIT_BINARY', 'git'),
     'composer_command' => env('COMPOSER_BINARY', env('COMPOSER_COMMAND', 'composer')),
+
+    /*
+    | Branch to track when auto-initializing a non-git directory.
+    | Defaults to "main". Override with GITHUB_BRANCH=master (or any branch).
+    */
+    'branch' => env('GITHUB_BRANCH', 'main'),
 ];

@@ -86,10 +86,13 @@ class CodePullService
                 throw new \RuntimeException('git is not available. Set GIT_BINARY in .env to the full path of git.exe.');
             }
 
-            // 2 — Snapshot composer.lock hash before pull
+            // 2 — Initialize git repo if this directory was copied rather than cloned
+            $this->ensureGitRepo($git, $sections);
+
+            // 3 — Snapshot composer.lock hash before pull
             $composerLockBefore = $this->composerLockHash();
 
-            // 3 — git pull
+            // 4 — git pull
             $pull = $this->run("\"{$git}\" pull");
             $sections[] = "=== git pull ===\n" . $pull['out'];
 
@@ -173,6 +176,57 @@ class CodePullService
         return ['out' => $out, 'exit' => $exit];
     }
 
+    /**
+     * If the working directory has no .git folder (files were copied, not cloned),
+     * init a repo, add the GitHub remote, and hard-reset to origin so git pull works
+     * from this point forward.
+     */
+    private function ensureGitRepo(string $git, array &$sections): void
+    {
+        if (is_dir($this->basePath . DIRECTORY_SEPARATOR . '.git')) {
+            return;
+        }
+
+        $owner  = config('github.owner');
+        $repo   = config('github.repo');
+        $token  = config('github.token');
+        $branch = $this->branchName();
+
+        if (! $owner || ! $repo) {
+            throw new \RuntimeException(
+                'This directory is not a git repository and GITHUB_OWNER / GITHUB_REPO are not set in .env. ' .
+                'Please clone the repository or set those env keys so the update service can initialize it.'
+            );
+        }
+
+        $remote = $token
+            ? "https://{$token}@github.com/{$owner}/{$repo}.git"
+            : "https://github.com/{$owner}/{$repo}.git";
+
+        $init = $this->run("\"{$git}\" init");
+        $sections[] = "=== git init (first-time setup) ===\n" . $init['out'];
+        if ($init['exit'] !== 0) {
+            throw new \RuntimeException("git init failed:\n" . $init['out']);
+        }
+
+        $addRemote = $this->run("\"{$git}\" remote add origin \"{$remote}\"");
+        $sections[] = "=== git remote add origin ===\n" . $addRemote['out'];
+
+        $fetch = $this->run("\"{$git}\" fetch origin \"{$branch}\"");
+        $sections[] = "=== git fetch origin {$branch} ===\n" . $fetch['out'];
+        if ($fetch['exit'] !== 0) {
+            throw new \RuntimeException("git fetch failed:\n" . $fetch['out']);
+        }
+
+        $reset = $this->run("\"{$git}\" reset --hard \"origin/{$branch}\"");
+        $sections[] = "=== git reset --hard origin/{$branch} (first-time setup) ===\n" . $reset['out'];
+        if ($reset['exit'] !== 0) {
+            throw new \RuntimeException("git reset --hard failed:\n" . $reset['out']);
+        }
+
+        Log::info('[CodePull] Git repository initialized from remote. Subsequent pulls will be incremental.');
+    }
+
     private function phpBin(): string
     {
         return config('github.php_binary', 'php');
@@ -186,5 +240,10 @@ class CodePullService
     private function composerBin(): string
     {
         return config('github.composer_command', 'composer');
+    }
+
+    private function branchName(): string
+    {
+        return config('github.branch', 'main');
     }
 }

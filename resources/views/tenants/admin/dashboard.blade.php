@@ -11,21 +11,14 @@
 <div class="space-y-6">
 
     {{-- Page Header --}}
-    <div class="flex items-start justify-between">
-        <div>
-            <h1 class="text-2xl font-bold" style="color:var(--db-primary);">
-                <i class="fas fa-gauge-high mr-2" style="color:var(--db-red);"></i> Dashboard
-            </h1>
-            <p class="text-sm mt-1" style="color:var(--db-muted);">
-                Welcome back, <span class="font-700" style="color:var(--db-accent);">{{ Auth::user()->name }}</span>!
-                Here's what's happening in your training center.
-            </p>
-        </div>
-        <div class="flex items-center gap-2 rounded-xl border px-4 py-2 text-xs flex-shrink-0"
-             style="background:var(--db-surface); border-color:var(--db-border); color:var(--db-muted);">
-            <i class="fas fa-calendar-day" style="color:var(--db-accent);"></i>
-            <span>{{ now()->format('l, F j, Y') }}</span>
-        </div>
+    <div>
+        <h1 class="text-2xl font-bold" style="color:var(--db-primary);">
+            <i class="fas fa-gauge-high mr-2" style="color:var(--db-red);"></i> Dashboard
+        </h1>
+        <p class="text-sm mt-1" style="color:var(--db-muted);">
+            Welcome back, <span class="font-700" style="color:var(--db-accent);">{{ Auth::user()->name }}</span>!
+            Here's what's happening in your training center.
+        </p>
     </div>
 
     {{-- Stats Cards --}}
